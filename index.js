@@ -1,13 +1,14 @@
+require('dotenv').config()
 const fs = require('fs')
 const { get } = require('http')
 const path = require('path')
 const { VK } = require('vk-io')
 
-const vk = new VK({
-  token: getToken()
-})
-
 const CONFIG = getConfig()
+
+const vk = new VK({
+  token: CONFIG.token
+})
 
 function randomInt() {
   // Return random int (for message id for example)
@@ -24,20 +25,13 @@ async function timeOut(sec) {
 function getConfig() {
   // Return config (js object)
   try {
-    const configDataJSON = fs.readFileSync(path.resolve(__dirname, 'config.json'), 'utf8')
-    return JSON.parse(configDataJSON)
+    return {
+      token: process.env.TOKEN,
+      message: process.env.MESSAGE,
+      adminId: process.env.ADMIN_ID
+    }
   } catch (error) {
-    throw new Error('Doesnt have config file, or he will not can parse from JSON')
-  }
-}
-
-function getToken() {
-  // Return token from config
-  const CONFIG = getConfig()
-  if (CONFIG.token) {
-    return CONFIG.token
-  } else {
-    throw new Error('Config doesnt have token')
+    throw new Error('Doesnt have all process env')
   }
 }
 
@@ -66,15 +60,14 @@ async function getUser(user_id) {
   return (await vk.api.users.get({ user_id }))[0]
 }
 
-async function sendMessage(user_id) {
+async function sendMessage(user_id, message) {
   // Send message to user_id (get text message from config)
   const user = (await vk.api.users.get({ user_id }))[0]
   const userName = user.first_name
-  const message = `${userName}, ` + CONFIG.message
   return await vk.api.messages.send({
     user_id,
     random_id: randomInt(),
-    message
+    message: message ?? `${userName}, ` + CONFIG.message
   })
 }
 
@@ -98,7 +91,7 @@ async function getUnansweredFriendsRequest() {
 }
 
 async function sendMessageAllUnansweredFriendsRequest() {
-  // Send message all (max - 14 per day) unanswered friends request
+  // Send message all (max - 19 per day) unanswered friends request
   const unsendedId = await getUnansweredFriendsRequest()
 
   for (userId of unsendedId) {
@@ -118,7 +111,14 @@ async function sendMessageToUnansweredFriendsRequestEachDay() {
   setInterval(sendMessageAllUnansweredFriendsRequest, 86400 * 1000)
 }
 
+async function onHosting() {
+  // Chek work
+  const owner = await getUser()
+  sendMessage(CONFIG.adminId, `Автоответчик успешно запущен для ${owner.first_name} ${owner.last_name}`)
+}
+
 (async () => {
+  onHosting()
   sendMessageToUnansweredFriendsRequestEachDay()
 
   while (true) {

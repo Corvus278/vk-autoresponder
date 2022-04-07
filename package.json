@@ -10,6 +10,8 @@
   "author": "corvus278",
   "license": "ISC",
   "dependencies": {
+    "dotenv": "^16.0.0",
     "vk-io": "^4.5.2"
-  }
+  },
+  "devDependencies": {}
 }
