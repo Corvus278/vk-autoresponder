@@ -126,9 +126,4 @@ async function sendMessageToUnansweredFriendsRequestEachDay() {
     await sendMessageAllUnansweredFriendsRequest()
     await timeOut(60)
   }
-});
-
-(async () => {
-  const fr = await getFriendsRequests()
-  console.log(fr.items.length - getSendedIdList().length)
 })()
